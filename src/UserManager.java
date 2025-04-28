@@ -2,31 +2,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
-class UserManager
-{
-    private Map<String, User> users;
+public class UserManager {
+    private final Map<String, User> users = new HashMap<>();
 
-    public UserManager() {
-        this.users = new HashMap<>();
-    }
-
-    public boolean createUser(String name, String email, List<String> mobileNumbers) throws IllegalArgumentException {
-        if (!isValidEmail(email)) {
-            throw new IllegalArgumentException("Invalid email format");
-        }
-
-        for (String number : mobileNumbers) {
-            if (!isValidMobileNumber(number)) {
-                throw new IllegalArgumentException("Invalid mobile number: " + number);
-            }
-        }
-
+    public boolean createUser(String name, String email, List<String> mobileNumbers) {
         if (users.containsKey(email)) {
             return false;
         }
-
         User newUser = new User(name, email, mobileNumbers);
         users.put(email, newUser);
         return true;
@@ -39,7 +22,7 @@ class UserManager
     public User getUser(String email) throws UserNotFoundException {
         User user = users.get(email);
         if (user == null) {
-            throw new UserNotFoundException("User with email " + email + " not found");
+            throw new UserNotFoundException("User not found with email: " + email);
         }
         return user;
     }
@@ -48,37 +31,11 @@ class UserManager
         return new ArrayList<>(users.values());
     }
 
-    public boolean updateUserName(String email, String newName) throws UserNotFoundException {
+    public boolean updateUser(String email, String newName, List<String> newNumbers)
+            throws UserNotFoundException {
         User user = getUser(email);
         user.setName(newName);
+        user.setMobileNumbers(newNumbers);
         return true;
-    }
-
-    public boolean addUserMobileNumber(String email, String number) throws UserNotFoundException, IllegalArgumentException {
-        if (!isValidMobileNumber(number)) {
-            throw new IllegalArgumentException("Invalid mobile number");
-        }
-
-        User user = getUser(email);
-        user.addMobileNumber(number);
-        return true;
-    }
-
-    public boolean removeUserMobileNumber(String email, String number) throws UserNotFoundException {
-        User user = getUser(email);
-        return user.removeMobileNumber(number);
-    }
-
-    private boolean isValidEmail(String email) {
-        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
-        Pattern pattern = Pattern.compile(emailRegex);
-        return pattern.matcher(email).matches();
-    }
-
-    private boolean isValidMobileNumber(String number) {
-        // Simple validation - 10 digits, optionally starting with + or having dashes/spaces
-        String mobileRegex = "^[+]?[0-9\\-\\s]{10,15}$";
-        Pattern pattern = Pattern.compile(mobileRegex);
-        return pattern.matcher(number).matches();
     }
 }
