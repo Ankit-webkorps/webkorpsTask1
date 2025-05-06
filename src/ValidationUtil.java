@@ -66,39 +66,6 @@ public class ValidationUtil {
         return isInternational ? "+" + digits : digits;
     }
 
-    // Handle invalid input with retry option
-    public static boolean handleInvalidInput(String errorMessage) {
-        System.out.println("\n" + errorMessage);
-        System.out.println("1. Exit this operation");
-        System.out.println("2. Try again");
-        System.out.print("Enter choice (1-2): ");
-
-        while (true) {
-            try {
-                int choice = scanner.nextInt();
-                scanner.nextLine(); // consume newline
-                if (choice == 1) return false; // Exit
-                if (choice == 2) return true;  // Retry
-                System.out.print("Please enter 1 or 2: ");
-            } catch (InputMismatchException e) {
-                System.out.print("Please enter a number (1 or 2): ");
-                scanner.nextLine();
-            }
-        }
-    }
-
-    // Validate and format phone number with examples
-    public static String validatePhoneNumberWithExamples(String input) {
-        if (input == null) return null;
-
-        String formatted = formatPhoneNumber(input);
-        if (isValidMobileNumber(input)) {
-            return formatted;
-        }
-
-        System.out.println("\nInvalid phone number format!");
 
 
-        return null;
-    }
 }

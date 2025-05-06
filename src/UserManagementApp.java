@@ -1,11 +1,8 @@
-import java.util.ArrayList;
-import java.util.InputMismatchException;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class UserManagementApp {
-    private static final UserManager userManager = new UserManager();
-    private static final Scanner scanner = new Scanner(System.in);
+     static  UserManager userManager = new UserManager();
+     static  Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
         boolean running = true;
@@ -15,17 +12,16 @@ public class UserManagementApp {
                 int choice = scanner.nextInt();
                 scanner.nextLine(); // consume newline
                 handleChoice(choice);
-                running = choice != 6;
-            } catch (InputMismatchException e) {
-                System.out.println("Invalid input. Please enter a number 1-6.");
-                scanner.nextLine();
+                if(choice==6)
+                    running =false;
             } catch (Exception e) {
                 System.out.println("Error: " + e.getMessage());
             }
         }
     }
 
-    private static void printMenu() {
+    private static void printMenu()
+    {
         System.out.println("\n=== User Management System ===");
         System.out.println("1. Create User");
         System.out.println("2. View All Users");
@@ -38,55 +34,61 @@ public class UserManagementApp {
 
     private static void handleChoice(int choice) throws UserNotFoundException {
         switch (choice) {
-            case 1 -> createUser();
-            case 2 -> viewAllUsers();
-            case 3 -> viewSingleUser();
-            case 4 -> updateUser();
-            case 5 -> deleteUser();
-            case 6 -> System.out.println("Exiting system...");
-            default -> System.out.println("Invalid choice. Please try again.");
+            case 1:
+                createUser();
+                break;
+            case 2:
+                viewAllUsers();
+                break;
+            case 3:
+                viewSingleUser();
+                break;
+            case 4:
+                updateUser();
+                break;
+            case 5:
+                deleteUser();
+                break;
+            case 6:
+                System.out.println("Exiting system...");
+                break;
+            default:
+                System.out.println("Invalid choice. Please try again.");
         }
     }
 
     private static void createUser() {
         System.out.println("\n--- Create New User ---");
 
-        String name = getInputWithRetry(
-                "Enter user name" ,
-                ValidationUtil::isValidName,
-                "Invalid name. Use only letters and spaces (2-50 chars)."
-        );
+        String name = getInputWithRetry();
         if (name == null) {
             System.out.println("User creation cancelled.");
             return;
         }
 
-        String email = getInputWithRetry(
-                "Enter email",
-                ValidationUtil::isValidEmail,
-                "Invalid email format."
-        );
+        String email = getInputWithRetry1();
+
         if (email == null) {
             System.out.println("User creation cancelled.");
             return;
         }
 
-        if (userManager.getAllUsers().stream().anyMatch(u -> u.getEmail().equals(email))) {
+        if (userManager.containsemail(email)) {
             System.out.println("Error: Email already exists.");
             System.out.println("Would you like to:");
             int choice = ValidationUtil.getChoiceOnInvalidInput();
             if (choice == 1) {
                 System.out.println("User creation cancelled.");
                 return;
-            }
-            else {
+            } else {
                 createUser(); // Restart the process
                 return;
             }
         }
 
         List<String> numbers = getPhoneNumbersWithRetry();
-        if (numbers == null) {
+        if (numbers == null)
+        {
             System.out.println("User creation cancelled.");
             return;
         }
@@ -95,20 +97,44 @@ public class UserManagementApp {
         System.out.println("User created successfully!");
     }
 
-    private static String getInputWithRetry(String prompt, InputValidator validator, String errorMsg) {
+    private static String getInputWithRetry() {
         while (true) {
-            System.out.print(prompt + " (or '0' to return to main menu): ");
+            System.out.print("Enter user name" + " (or '0' to return to main menu): ");
             String input = scanner.nextLine().trim();
 
             if (input.equals("0")) {
                 return null;
             }
 
-            if (validator.validate(input)) {
+            if (ValidationUtil.isValidName(input)) {
                 return input;
             }
 
-            System.out.println(errorMsg);
+            System.out.println("Invalid name format.");
+            System.out.println("Would you like to:");
+            int choice = ValidationUtil.getChoiceOnInvalidInput();
+
+            if (choice == 1) {
+                return null;
+            }
+        }
+    }
+
+
+    private static String getInputWithRetry1() {
+        while (true) {
+            System.out.print("Enter email" + " (or '0' to return to main menu): ");
+            String input = scanner.nextLine().trim();
+
+            if (input.equals("0")) {
+                return null;
+            }
+
+            if (ValidationUtil.isValidEmail(input)) {
+                return input;
+            }
+
+            System.out.println("invalid email format");
             System.out.println("Would you like to:");
             int choice = ValidationUtil.getChoiceOnInvalidInput();
 
@@ -135,7 +161,7 @@ public class UserManagementApp {
                 String number = entry.trim();
                 if (!number.isEmpty()) {
                     if (ValidationUtil.isValidMobileNumber(number)) {
-                        numbers.add(ValidationUtil.formatPhoneNumber(number));
+                        numbers.add(number);
                     } else {
                         System.out.println("Invalid number: " + number);
                         allValid = false;
@@ -162,7 +188,9 @@ public class UserManagementApp {
             System.out.println("No users found.");
         } else {
             System.out.println("\n--- All Users ---");
-            users.forEach(System.out::println);
+            for(User u:users){
+                System.out.println(u);
+            }
         }
     }
 
@@ -181,11 +209,9 @@ public class UserManagementApp {
                 System.out.println("Example of valid email: user@example.com");
 
                 System.out.println("\nWould you like to:");
-                System.out.println("1. Try again with a different email");
-                System.out.println("2. Cancel the operation");
-                System.out.print("Enter your choice (1-2): ");
 
-                int choice = getValidChoice(1, 2);
+
+                int choice = ValidationUtil.getChoiceOnInvalidInput();
                 if (choice == 2) {
                     System.out.println("Operation cancelled.");
                     return;
@@ -194,7 +220,10 @@ public class UserManagementApp {
             }
 
             try {
-                User user = userManager.getUser(email);
+                User user = UserManager.users.get(email);
+                if (user == null) {
+                    throw new UserNotFoundException("User not found with email: " + email);
+                }
                 System.out.println("\nUser found:");
                 System.out.println(user);
                 return;
@@ -206,7 +235,7 @@ public class UserManagementApp {
                 System.out.println("2. Cancel the operation");
                 System.out.print("Enter your choice (1-2): ");
 
-                int choice = getValidChoice(1, 2);
+                int choice = ValidationUtil.getChoiceOnInvalidInput();
                 if (choice == 2) {
                     System.out.println("Operation cancelled.");
                     return;
@@ -215,21 +244,7 @@ public class UserManagementApp {
         }
     }
 
-    private static int getValidChoice(int min, int max) {
-        while (true) {
-            try {
-                int choice = scanner.nextInt();
-                scanner.nextLine(); // consume newline
-                if (choice >= min && choice <= max) {
-                    return choice;
-                }
-                System.out.print("Please enter a number between " + min + " and " + max + ": ");
-            } catch (InputMismatchException e) {
-                System.out.print("Please enter a valid number: ");
-                scanner.nextLine(); // clear invalid input
-            }
-        }
-    }
+
 
     private static void updateUser() throws UserNotFoundException {
         System.out.print("\nEnter user email to update (or '0' to return to main menu): ");
@@ -239,7 +254,10 @@ public class UserManagementApp {
             return;
         }
 
-        User user = userManager.getUser(email);
+        User user =UserManager.users.get(email);
+        if (user == null) {
+            throw new UserNotFoundException("User not found with email: " + email);
+        }
         System.out.println("\nCurrent details:\n" + user);
 
         while (true) {
@@ -251,7 +269,8 @@ public class UserManagementApp {
             System.out.print("Enter choice (1-4) or '0' to return to main menu: ");
 
             String choiceStr = scanner.nextLine();
-            if (choiceStr.equals("0")) {
+            if (choiceStr.equals("0"))
+            {
                 System.out.println("Returning to main menu...");
                 return;
             }
@@ -260,30 +279,28 @@ public class UserManagementApp {
                 int choice = Integer.parseInt(choiceStr);
 
                 switch (choice) {
-                    case 1 -> {
-                        String name = getInputWithRetry("Enter new name", ValidationUtil::isValidName,
-                                "Invalid name format.");
+                    case 1 : {
+                        String name = getInputWithRetry();
                         if (name != null) {
-                            userManager.updateUser(email, name, user.getMobileNumbers());
+                            user.setName(name);
                             System.out.println("Name updated successfully!");
                         } else {
                             System.out.println("Update cancelled.");
                         }
                         return;
                     }
-                    case 2 -> {
+                    case 2 : {
                         List<String> numbers = getPhoneNumbersWithRetry();
                         if (numbers != null) {
-                            userManager.updateUser(email, user.getName(), numbers);
+                            user.setMobileNumbers(numbers);
                             System.out.println("Phone numbers updated successfully!");
                         } else {
                             System.out.println("Update cancelled.");
                         }
                         return;
                     }
-                    case 3 -> {
-                        String name = getInputWithRetry("Enter new name", ValidationUtil::isValidName,
-                                "Invalid name format.");
+                    case 3 : {
+                        String name = getInputWithRetry();
                         if (name == null) {
                             System.out.println("Update cancelled.");
                             break;
@@ -291,18 +308,21 @@ public class UserManagementApp {
 
                         List<String> numbers = getPhoneNumbersWithRetry();
                         if (numbers != null) {
-                            userManager.updateUser(email, name, numbers);
+                            user.setMobileNumbers(numbers);
+                            user.setName(name);
                             System.out.println("User details updated successfully!");
                         } else {
                             System.out.println("Update cancelled.");
                         }
                         return;
                     }
-                    case 4 -> {
+
+                    case 4 : {
                         System.out.println("Update cancelled.");
                         return;
                     }
-                    default -> System.out.println("Invalid choice. Please enter 1-4.");
+
+                    default : System.out.println("Invalid choice. Please enter 1-4.");
                 }
             } catch (NumberFormatException e) {
                 System.out.println("Invalid input. Please enter a number 1-4 or '0'.");
@@ -323,10 +343,5 @@ public class UserManagementApp {
         } else {
             System.out.println("User not found.");
         }
-    }
-
-    @FunctionalInterface
-    private interface InputValidator {
-        boolean validate(String input);
     }
 }
